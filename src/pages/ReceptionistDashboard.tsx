@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import StatsCard from '../components/StatsCard';
 import BookingModal from '../components/BookingModal';
 import TaskModal from '../components/TaskModal';
+import MaintenanceModal from '../components/MaintenanceModal';
 import { DataService, Room, Booking, User, Task } from '../services/dataService';
-import { Users, LogIn, LogOut, Clock, BedDouble, Search, SprayCan } from 'lucide-react';
+import { Users, LogIn, LogOut, BedDouble, SprayCan, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
+import { AuthService } from '../services/authService';
 
 const ReceptionistDashboard: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -17,7 +19,10 @@ const ReceptionistDashboard: React.FC = () => {
   // Modals State
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  const currentUser = AuthService.getCurrentUser();
 
   const loadData = () => {
     setRooms(DataService.getRooms());
@@ -50,7 +55,7 @@ const ReceptionistDashboard: React.FC = () => {
         roomId: selectedRoom.id,
         roomNumber: selectedRoom.id,
         guestName: guestName,
-        userRole: 'Receptionist',
+        userRole: 'Customer', // Created as customer booking
         checkIn,
         checkOut,
       });
@@ -80,6 +85,18 @@ const ReceptionistDashboard: React.FC = () => {
       setFeedback({ message: 'Cleaning task assigned.', type: 'success' });
   };
 
+  const handleReportIssue = (roomId: string, description: string, priority: 'Low' | 'Medium' | 'High') => {
+      DataService.createMaintenanceIssue({
+          roomId,
+          roomNumber: roomId,
+          description,
+          priority,
+          reportedBy: currentUser?.name || 'Receptionist'
+      });
+      loadData();
+      setFeedback({ message: 'Maintenance issue reported.', type: 'success' });
+  };
+
   const filteredRooms = filterStatus === 'All' 
     ? rooms 
     : rooms.filter(r => r.status === filterStatus);
@@ -101,6 +118,12 @@ const ReceptionistDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Reception Desk</h2>
         <div className="flex gap-2">
+            <button 
+                onClick={() => setIsMaintenanceModalOpen(true)}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+            >
+                <AlertTriangle className="w-4 h-4" /> Report Issue
+            </button>
             <button 
                 onClick={() => setIsTaskModalOpen(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
@@ -249,6 +272,14 @@ const ReceptionistDashboard: React.FC = () => {
         rooms={rooms}
         staff={users}
         onConfirm={handleCreateTask}
+      />
+
+      <MaintenanceModal 
+        isOpen={isMaintenanceModalOpen}
+        onClose={() => setIsMaintenanceModalOpen(false)}
+        rooms={rooms}
+        onConfirm={handleReportIssue}
+        reporterName={currentUser?.name || 'Receptionist'}
       />
     </div>
   );
