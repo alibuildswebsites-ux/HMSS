@@ -1,16 +1,14 @@
 import React from 'react';
 import ManagerDashboard from './ManagerDashboard';
-import { 
-  ReceptionistDashboard, 
-  WaiterDashboard, 
-  CookDashboard, 
-  HousekeeperDashboard, 
-  CustomerDashboard 
-} from './RoleDashboards';
+import ReceptionistDashboard from './ReceptionistDashboard';
+import WaiterDashboard from './WaiterDashboard';
+import CookDashboard from './CookDashboard';
+import HousekeeperDashboard from './HousekeeperDashboard';
+import CustomerDashboard from './CustomerDashboard';
 
 const Dashboard: React.FC = () => {
-  // Read role from localStorage, default to 'Manager' if not found
-  const role = localStorage.getItem('hms_role') || 'Manager';
+  // Read role from localStorage using correct key
+  const role = localStorage.getItem('currentRole') || 'Manager';
 
   switch (role) {
     case 'Manager':

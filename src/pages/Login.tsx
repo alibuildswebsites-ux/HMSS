@@ -8,8 +8,9 @@ const Login: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Store selected role
-    localStorage.setItem('hms_role', role);
+    // Store selected role using the required key 'currentRole'
+    localStorage.setItem('currentRole', role);
+    
     // Simple user simulation
     localStorage.setItem('hms_user', JSON.stringify({ name: 'Demo User', role: role }));
     

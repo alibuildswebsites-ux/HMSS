@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, CalendarDays, Users, Coffee, MessageSquare, 
   Settings, Folder, Menu, X, ClipboardList, Utensils, LogIn, LogOut,
-  ShoppingBag, SprayCan, BookOpen
+  ShoppingBag, SprayCan, BookOpen, FileText
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -12,11 +12,13 @@ const Sidebar: React.FC = () => {
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
   
   // Get role from storage
-  const role = localStorage.getItem('hms_role') || 'Manager';
+  const role = localStorage.getItem('currentRole') || 'Manager';
 
   // Define all possible items
   const allNavItems = {
-    dashboard: { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    overview: { icon: LayoutDashboard, label: 'Overview', path: '/' },
+    dashboard: { icon: LayoutDashboard, label: 'Dashboard', path: '/' }, // Generic dashboard link
+    reports: { icon: FileText, label: 'Reports', path: '/reports' },
     bookings: { icon: CalendarDays, label: 'Bookings', path: '/bookings' },
     staff: { icon: Users, label: 'Staff', path: '/staff' },
     kitchen: { icon: Coffee, label: 'Kitchen', path: '/kitchen' },
@@ -29,7 +31,7 @@ const Sidebar: React.FC = () => {
     checkout: { icon: LogOut, label: 'Check-Out', path: '/check-out' },
     orders: { icon: ShoppingBag, label: 'Orders', path: '/orders' },
     kitchenOrders: { icon: Utensils, label: 'Kitchen Orders', path: '/kitchen-orders' },
-    cleaning: { icon: SprayCan, label: 'Cleaning', path: '/cleaning' },
+    cleaningTasks: { icon: SprayCan, label: 'Cleaning Tasks', path: '/cleaning' },
     myBooking: { icon: BookOpen, label: 'My Booking', path: '/my-booking' }
   };
 
@@ -39,27 +41,45 @@ const Sidebar: React.FC = () => {
   switch(role) {
     case 'Manager':
       navItems = [
-        allNavItems.dashboard, allNavItems.bookings, allNavItems.staff, 
-        allNavItems.kitchen, allNavItems.messages, allNavItems.settings, allNavItems.files
+        allNavItems.overview,
+        allNavItems.reports,
+        allNavItems.staff, 
+        allNavItems.bookings,
+        allNavItems.settings
       ];
       break;
     case 'Receptionist':
       navItems = [
-        allNavItems.dashboard, allNavItems.bookings, allNavItems.checkin, 
-        allNavItems.checkout, allNavItems.messages
+        allNavItems.dashboard,
+        allNavItems.bookings, 
+        allNavItems.checkin, 
+        allNavItems.checkout
       ];
       break;
     case 'Waiter':
-      navItems = [allNavItems.dashboard, allNavItems.orders];
+      navItems = [
+        allNavItems.dashboard, 
+        allNavItems.orders
+      ];
       break;
     case 'Cook':
-      navItems = [allNavItems.dashboard, allNavItems.kitchenOrders];
+      navItems = [
+        allNavItems.dashboard, 
+        allNavItems.kitchenOrders
+      ];
       break;
     case 'Housekeeper':
-      navItems = [allNavItems.dashboard, allNavItems.cleaning];
+      navItems = [
+        allNavItems.dashboard, 
+        allNavItems.cleaningTasks
+      ];
       break;
     case 'Customer':
-      navItems = [allNavItems.dashboard, allNavItems.myBooking, allNavItems.orders];
+      navItems = [
+        allNavItems.dashboard, 
+        allNavItems.myBooking, 
+        allNavItems.orders
+      ];
       break;
     default:
       navItems = [allNavItems.dashboard];
