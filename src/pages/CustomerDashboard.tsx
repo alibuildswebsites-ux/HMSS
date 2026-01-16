@@ -3,6 +3,7 @@ import StatsCard from '../components/StatsCard';
 import BookingModal from '../components/BookingModal';
 import OrderModal from '../components/OrderModal';
 import { DataService, Room, Booking, Order, MenuItem } from '../services/dataService';
+import { AuthService } from '../services/authService';
 import { Calendar, LogOut, CreditCard, ShoppingBag, BedDouble, Search, CheckCircle, Utensils, Ban } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -17,10 +18,11 @@ const CustomerDashboard: React.FC = () => {
   const [filter, setFilter] = useState<'All' | 'Available'>('Available');
   const [feedback, setFeedback] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
-  // Get current user info from simulated session
-  const user = JSON.parse(localStorage.getItem('hms_user') || '{"name":"Demo User"}');
+  // Get current user via AuthService
+  const user = AuthService.getCurrentUser();
 
   const loadData = () => {
+    if (!user) return;
     setRooms(DataService.getRooms());
     setMyBookings(DataService.getBookingsByRole('Customer', user.name));
     setMyOrders(DataService.getOrdersByRole('Customer', user.name));
@@ -29,12 +31,10 @@ const CustomerDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    // Poll for order status updates
-    const interval = setInterval(() => {
-        setMyOrders(DataService.getOrdersByRole('Customer', user.name));
-    }, 5000);
+    // Poll all data to keep rooms and order status in sync
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.name]);
 
   // Clear feedback after 3 seconds
   useEffect(() => {
@@ -43,6 +43,8 @@ const CustomerDashboard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [feedback]);
+
+  if (!user) return null;
 
   // --- Booking Handlers ---
   const handleBookClick = (room: Room) => {
@@ -237,7 +239,7 @@ const CustomerDashboard: React.FC = () => {
                     myOrders.map(order => (
                         <tr key={order.id} className="hover:bg-gray-50/50">
                         <td className="p-3 text-gray-600 text-xs">
-                             {order.items.map(i => `${i.qty}x ${i.item.item}`).join(', ')}
+                             {order.items.map(i => `${i.qty}x ${i.item}`).join(', ')}
                         </td>
                         <td className="p-3 font-bold text-gray-800">${order.total}</td>
                         <td className="p-3">
@@ -277,7 +279,7 @@ const CustomerDashboard: React.FC = () => {
 
       </div>
 
-      {/* Available Rooms Section (Simplified for brevity, kept structure) */}
+      {/* Available Rooms Section */}
       <div className="space-y-4">
         <div className="flex flex-wrap justify-between items-center gap-4">
            <h3 className="text-xl font-bold text-gray-800">Available Rooms</h3>
@@ -289,16 +291,21 @@ const CustomerDashboard: React.FC = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {displayedRooms.map(room => (
-            <div key={room.id} className={clsx("border rounded-xl p-4 shadow-sm relative overflow-hidden", room.status === 'Vacant' ? "bg-white hover:shadow-md" : "bg-gray-50 opacity-75")}>
-                {/* Room content same as before... */}
+            <div key={room.id} className={clsx("border rounded-xl p-4 shadow-sm relative overflow-hidden transition-all", room.status === 'Vacant' ? "bg-white hover:shadow-md" : "bg-gray-50 opacity-75")}>
+                {room.status === 'Occupied' && (
+                    <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                        OCCUPIED
+                    </div>
+                )}
                 <div className="mb-4">
                   <h4 className="text-xl font-bold text-gray-800">Room {room.id}</h4>
                   <p className="text-green-600 font-semibold">${room.price} <span className="text-gray-400 font-normal text-xs">/night</span></p>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded mt-2 inline-block">{room.type}</span>
                 </div>
                 <button 
                   onClick={() => handleBookClick(room)}
                   disabled={room.status !== 'Vacant'}
-                  className={clsx("w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2", room.status === 'Vacant' ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-400")}
+                  className={clsx("w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors", room.status === 'Vacant' ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-gray-200 text-gray-400 cursor-not-allowed")}
                 >
                   <BedDouble className="w-4 h-4" /> {room.status === 'Vacant' ? 'Book Now' : 'Unavailable'}
                 </button>

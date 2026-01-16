@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import StatsCard from '../components/StatsCard';
 import MaintenanceModal from '../components/MaintenanceModal';
 import { DataService, Task, Room } from '../services/dataService';
+import { AuthService } from '../services/authService';
 import { SprayCan, ClipboardList, CheckCircle, Clock, AlertTriangle, Play, CheckSquare } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -11,13 +12,14 @@ const HousekeeperDashboard: React.FC = () => {
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [feedback, setFeedback] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
-  // Get current user
-  const user = JSON.parse(localStorage.getItem('hms_user') || '{"name":"John Doe"}');
+  // Get current user via AuthService
+  const user = AuthService.getCurrentUser();
 
   const loadData = () => {
-    // Filter tasks for this housekeeper or show all if role not strict
+    if (!user) return;
+    // Filter tasks for this housekeeper
     const allTasks = DataService.getHousekeepingTasks();
-    const myTasks = allTasks.filter(t => t.assignee === user.name || t.assignee === 'John Doe'); // Fallback for demo
+    const myTasks = allTasks.filter(t => t.assignee === user.name);
     setTasks(myTasks);
     setRooms(DataService.getRooms());
   };
@@ -26,7 +28,7 @@ const HousekeeperDashboard: React.FC = () => {
     loadData();
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.name]);
 
   useEffect(() => {
     if (feedback) {
@@ -34,6 +36,8 @@ const HousekeeperDashboard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [feedback]);
+
+  if (!user) return null;
 
   const updateTaskStatus = (taskId: string, status: Task['status']) => {
       DataService.updateHousekeepingTaskStatus(taskId, status);
@@ -53,6 +57,7 @@ const HousekeeperDashboard: React.FC = () => {
           priority,
           reportedBy: user.name
       });
+      loadData();
       setFeedback({ message: 'Maintenance issue reported.', type: 'success' });
   };
 
@@ -111,7 +116,7 @@ const HousekeeperDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tasks.filter(t => t.status !== 'Completed').map(task => (
-                <div key={task.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+                <div key={task.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all animate-in fade-in duration-300">
                     <div className="flex justify-between items-start mb-3">
                         <div>
                             <span className="text-2xl font-bold text-gray-800">{task.roomNumber}</span>
@@ -126,18 +131,22 @@ const HousekeeperDashboard: React.FC = () => {
                     </div>
                     
                     {task.notes && (
-                        <div className="bg-yellow-50 p-2 rounded text-xs text-gray-600 italic mb-2">
+                        <div className="bg-yellow-50 p-2 rounded text-xs text-gray-600 italic mb-2 border border-yellow-100">
                            "{task.notes}"
                         </div>
                     )}
+                    
+                    <div className="text-xs text-gray-400 mb-4 flex items-center gap-1">
+                        <Clock className="w-3 h-3"/> Due: {task.date}
+                    </div>
 
-                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-50">
+                    <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-50">
                         {task.status === 'Pending' ? (
                              <button 
                                 onClick={() => updateTaskStatus(task.id, 'In Progress')}
                                 className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
                              >
-                                <Play className="w-4 h-4" /> Start
+                                <Play className="w-4 h-4" /> Start Task
                              </button>
                         ) : (
                             <button 
@@ -153,7 +162,7 @@ const HousekeeperDashboard: React.FC = () => {
             {tasks.filter(t => t.status !== 'Completed').length === 0 && (
                 <div className="col-span-full py-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400">
                     <CheckCircle className="w-10 h-10 mx-auto mb-3 text-green-200" />
-                    <p>All tasks completed! Great job.</p>
+                    <p>No pending tasks assigned to you.</p>
                 </div>
             )}
         </div>
