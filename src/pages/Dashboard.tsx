@@ -24,9 +24,9 @@ const Dashboard: React.FC = () => {
   const occupiedPct = (occupied / total) * 100;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-full overflow-hidden">
+    <div className="w-full max-w-full overflow-hidden p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Top Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         
         {/* Reservation Stats */}
         <StatsCard 
@@ -37,19 +37,19 @@ const Dashboard: React.FC = () => {
                 { label: 'Departure', value: 27, icon: <LogOut className="w-4 h-4 text-red-400"/> },
             ]}
             mainVisual={
-                <div className="mt-4 flex flex-wrap gap-4 sm:gap-8">
+                <div className="mt-4 flex flex-wrap gap-4 sm:gap-6">
                      <div className="flex items-center gap-2">
                         <SprayCan className="w-5 h-5 text-gray-400" />
                         <div>
                             <p className="text-xs text-gray-500">Rented & dirty</p>
-                            <p className="font-bold text-gray-800">14</p>
+                            <p className="font-bold text-gray-800 text-sm">14</p>
                         </div>
                      </div>
                      <div className="flex items-center gap-2">
                         <BedDouble className="w-5 h-5 text-gray-400" />
                         <div>
                             <p className="text-xs text-gray-500">Vacant & dirty</p>
-                            <p className="font-bold text-gray-800">27</p>
+                            <p className="font-bold text-gray-800 text-sm">27</p>
                         </div>
                      </div>
                 </div>
@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
                 { label: 'Not ready', value: notReady, color: 'bg-green-200' },
             ]}
             mainVisual={
-                <div className="h-12 sm:h-16 w-full flex rounded-xl overflow-hidden mt-2">
+                <div className="h-12 w-full flex rounded-lg overflow-hidden mt-2">
                     <div style={{ width: `${vacantPct}%` }} className="bg-green-900 h-full"></div>
                     <div style={{ width: `${occupiedPct}%` }} className="bg-green-500 h-full"></div>
                     <div className="flex-1 bg-green-100 h-full"></div>
@@ -81,32 +81,32 @@ const Dashboard: React.FC = () => {
                 { label: 'Yesterday', value: 'USD 350' },
             ]}
              mainVisual={
-                 <div className="flex justify-end mt-4 sm:mt-8">
-                     <a href="#" className="text-xs text-gray-400 hover:text-green-600">Details &gt;&gt;</a>
+                 <div className="flex justify-end mt-4">
+                     <a href="#" className="text-xs text-gray-400 hover:text-green-600 p-2">Details &gt;&gt;</a>
                  </div>
              }
         />
       </div>
 
       {/* Middle Row: Chart & Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Chart Section */}
-        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[350px]">
+        <div className="lg:col-span-2 bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100 w-full">
             <BookingChart />
         </div>
 
         {/* Calendar Section */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-h-[350px]">
+        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col w-full">
             <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-800">Calendar</h3>
-                <span className="text-xs text-green-600 font-medium cursor-pointer">&lt; March &gt;</span>
+                <h3 className="font-bold text-gray-800 text-lg sm:text-xl">Calendar</h3>
+                <button className="text-xs text-green-600 font-medium cursor-pointer p-1">&lt; March &gt;</button>
             </div>
             
             <div className="flex flex-wrap gap-2 mb-4">
-                <button className="bg-gray-900 text-white text-[10px] px-3 py-1 rounded-full">1 Bed (6)</button>
-                <button className="bg-white border border-gray-200 text-gray-500 text-[10px] px-3 py-1 rounded-full">2 Beds (12)</button>
-                <button className="bg-white border border-gray-200 text-gray-500 text-[10px] px-3 py-1 rounded-full">3 Beds (15)</button>
+                <button className="bg-gray-900 text-white text-[10px] px-3 py-2 rounded-full h-8">1 Bed (6)</button>
+                <button className="bg-white border border-gray-200 text-gray-500 text-[10px] px-3 py-2 rounded-full h-8">2 Beds (12)</button>
+                <button className="bg-white border border-gray-200 text-gray-500 text-[10px] px-3 py-2 rounded-full h-8">3 Beds (15)</button>
             </div>
 
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2 no-scrollbar">
@@ -115,7 +115,7 @@ const Dashboard: React.FC = () => {
                 ))}
             </div>
 
-            <div className="space-y-3 flex-1 overflow-y-auto pr-1 max-h-[200px] sm:max-h-none">
+            <div className="space-y-3 flex-1 overflow-y-auto max-h-56 sm:max-h-80 pr-1">
                 {bookings.slice(0, 3).map((bk, i) => (
                     <div key={i} className={`flex items-center p-3 rounded-lg ${i % 2 === 0 ? 'bg-green-50/50' : 'bg-gray-50'}`}>
                         <div className="w-10 text-center mr-3 border-r border-gray-200 pr-3 shrink-0">
@@ -133,13 +133,13 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Bottom List */}
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold text-gray-800">New customer</h3>
-                    <a href="#" className="text-xs text-gray-400">View all &gt;&gt;</a>
+                    <h3 className="font-bold text-gray-800 text-lg sm:text-xl">New customer</h3>
+                    <a href="#" className="text-xs text-gray-400 p-2">View all &gt;&gt;</a>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 overflow-y-auto max-h-56 sm:max-h-80">
                     {bookings.map((bk, i) => (
                         <div key={bk.id} className="flex items-center justify-between">
                             <div className="flex items-center gap-3 min-w-0">
@@ -149,18 +149,18 @@ const Dashboard: React.FC = () => {
                                     <p className="text-xs text-gray-400 truncate">Room #{bk.roomNumber}</p>
                                 </div>
                             </div>
-                            <span className="text-xs text-gray-500 shrink-0 ml-2">20/01 - 28/01</span>
+                            <span className="text-xs text-gray-500 shrink-0 ml-2">20/01</span>
                         </div>
                     ))}
                 </div>
             </div>
             
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
-                     <h3 className="font-bold text-gray-800">Recent activities</h3>
-                     <a href="#" className="text-xs text-gray-400">View all &gt;&gt;</a>
+                     <h3 className="font-bold text-gray-800 text-lg sm:text-xl">Recent activities</h3>
+                     <a href="#" className="text-xs text-gray-400 p-2">View all &gt;&gt;</a>
                 </div>
-                 <div className="space-y-6 relative">
+                 <div className="space-y-6 relative overflow-y-auto max-h-56 sm:max-h-80 pr-2">
                     <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-gray-100"></div>
                     {[1, 2, 3].map((_, i) => (
                         <div key={i} className="flex gap-4 relative">
