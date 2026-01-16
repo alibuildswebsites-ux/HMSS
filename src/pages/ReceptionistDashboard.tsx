@@ -9,6 +9,7 @@ const ReceptionistDashboard: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filterStatus, setFilterStatus] = useState<'All' | 'Vacant' | 'Occupied'>('All');
+  const [feedback, setFeedback] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
   // Booking Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,6 +23,14 @@ const ReceptionistDashboard: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Clear feedback after 3 seconds
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(() => setFeedback(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
 
   const handleBookClick = (room: Room) => {
     setSelectedRoom(room);
@@ -39,6 +48,7 @@ const ReceptionistDashboard: React.FC = () => {
         checkOut,
       });
       loadData();
+      setFeedback({ message: 'Reservation created successfully.', type: 'success' });
     }
   };
 
@@ -46,6 +56,7 @@ const ReceptionistDashboard: React.FC = () => {
     if (window.confirm('Cancel this booking and release the room?')) {
       DataService.cancelBooking(id);
       loadData();
+      setFeedback({ message: 'Reservation cancelled.', type: 'success' });
     }
   };
 
@@ -54,7 +65,17 @@ const ReceptionistDashboard: React.FC = () => {
     : rooms.filter(r => r.status === filterStatus);
 
   return (
-    <div className="w-full p-4 sm:p-6 space-y-6">
+    <div className="w-full p-4 sm:p-6 space-y-6 relative">
+      {/* Feedback Toast */}
+      {feedback && (
+        <div className={clsx(
+          "fixed top-20 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white font-medium animate-in fade-in slide-in-from-top-2",
+          feedback.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        )}>
+          {feedback.message}
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Reception Desk</h2>
         <div className="text-sm text-gray-500">

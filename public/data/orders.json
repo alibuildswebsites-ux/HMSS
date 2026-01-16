@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ORD-101",
+    "items": [{ "id": 1, "item": "Club Sandwich", "price": 12, "qty": 2 }],
+    "total": 24,
+    "status": "Pending",
+    "tableOrRoom": "1420",
+    "orderedBy": "Faruk Ahmad",
+    "timestamp": "2023-10-27T10:00:00"
+  },
+  {
+    "id": "ORD-102",
+    "items": [{ "id": 2, "item": "Espresso", "price": 4, "qty": 1 }],
+    "total": 4,
+    "status": "Ready",
+    "tableOrRoom": "Table 5",
+    "orderedBy": "Waiter",
+    "timestamp": "2023-10-27T10:15:00"
+  }
+]

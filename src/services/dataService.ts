@@ -9,6 +9,7 @@ const KEYS = {
   USERS: 'hms_users',
   MENU: 'hms_menu',
   BOOKINGS: 'hms_bookings',
+  ORDERS: 'hms_orders',
   INIT: 'hms_initialized'
 };
 
@@ -45,6 +46,23 @@ export interface MenuItem {
   category: string;
 }
 
+export interface OrderItem {
+  id: number;
+  item: string;
+  price: number;
+  qty: number;
+}
+
+export interface Order {
+  id: string;
+  items: OrderItem[];
+  total: number;
+  status: 'Pending' | 'Preparing' | 'Ready' | 'Served' | 'Cancelled';
+  tableOrRoom: string;
+  orderedBy: string;
+  timestamp: string;
+}
+
 export const DataService = {
   /**
    * Initialize data from JSON files if not present in localStorage.
@@ -55,25 +73,37 @@ export const DataService = {
     }
 
     try {
-      const [roomsRes, usersRes, menuRes, bookingsRes] = await Promise.all([
+      // Use allSettled to allow some files to fail (like orders.json if not present yet)
+      const results = await Promise.allSettled([
         fetch('/data/rooms.json'),
         fetch('/data/users.json'),
         fetch('/data/menu.json'),
-        fetch('/data/bookings.json')
+        fetch('/data/bookings.json'),
+        fetch('/data/orders.json')
       ]);
 
-      const rooms = await roomsRes.json();
-      const users = await usersRes.json();
-      const menu = await menuRes.json();
-      const bookings = await bookingsRes.json();
+      const handleResponse = async (result: PromiseSettledResult<Response>, key: string, defaultVal: any) => {
+        if (result.status === 'fulfilled' && result.value.ok) {
+          try {
+            const data = await result.value.json();
+            localStorage.setItem(key, JSON.stringify(data));
+          } catch (e) {
+            console.warn(`Failed to parse JSON for ${key}`, e);
+            localStorage.setItem(key, JSON.stringify(defaultVal));
+          }
+        } else {
+          localStorage.setItem(key, JSON.stringify(defaultVal));
+        }
+      };
 
-      localStorage.setItem(KEYS.ROOMS, JSON.stringify(rooms));
-      localStorage.setItem(KEYS.USERS, JSON.stringify(users));
-      localStorage.setItem(KEYS.MENU, JSON.stringify(menu));
-      localStorage.setItem(KEYS.BOOKINGS, JSON.stringify(bookings));
+      await handleResponse(results[0], KEYS.ROOMS, []);
+      await handleResponse(results[1], KEYS.USERS, []);
+      await handleResponse(results[2], KEYS.MENU, []);
+      await handleResponse(results[3], KEYS.BOOKINGS, []);
+      await handleResponse(results[4], KEYS.ORDERS, []);
+
       localStorage.setItem(KEYS.INIT, 'true');
-      
-      console.log('HMS: Data initialized from public JSON files.');
+      console.log('HMS: Data initialized.');
     } catch (error) {
       console.error('HMS: Failed to initialize data', error);
     }
@@ -97,11 +127,9 @@ export const DataService = {
   getBookings(): Booking[] {
     const data = localStorage.getItem(KEYS.BOOKINGS);
     let bookings: Booking[] = data ? JSON.parse(data) : [];
-    
-    // Ensure compatibility if roomId is missing in old data
     return bookings.map(b => ({
       ...b,
-      roomId: b.roomId || b.roomNumber // Fallback mapping
+      roomId: b.roomId || b.roomNumber
     }));
   },
 
@@ -110,7 +138,6 @@ export const DataService = {
     if (role === 'Customer' && userName) {
       return all.filter(b => b.guestName === userName);
     }
-    // Receptionist/Manager see all
     return all;
   },
 
@@ -125,10 +152,8 @@ export const DataService = {
       id: `BK-${Date.now().toString().slice(-6)}`,
       status: 'Confirmed'
     };
-    bookings.unshift(newBooking); // Add to top
+    bookings.unshift(newBooking);
     this.saveBookings(bookings);
-    
-    // Strict Rule: Update room status to Occupied on booking
     this.updateRoomStatus(booking.roomId, 'Occupied');
     return newBooking;
   },
@@ -136,13 +161,10 @@ export const DataService = {
   cancelBooking(bookingId: string) {
     const bookings = this.getBookings();
     const index = bookings.findIndex(b => b.id === bookingId);
-    
     if (index !== -1) {
       const roomId = bookings[index].roomId;
       bookings[index].status = 'Cancelled';
       this.saveBookings(bookings);
-      
-      // Strict Rule: Update room status to Available (Vacant) on cancel
       this.updateRoomStatus(roomId, 'Vacant');
     }
   },
@@ -156,14 +178,51 @@ export const DataService = {
     }
   },
 
-  /**
-   * Clears localStorage to force a re-fetch of initial data on next reload.
-   */
+  // --- Order Methods ---
+
+  getOrders(): Order[] {
+    const data = localStorage.getItem(KEYS.ORDERS);
+    return data ? JSON.parse(data) : [];
+  },
+
+  getOrdersByRole(role: string, userName?: string): Order[] {
+    const all = this.getOrders();
+    if (role === 'Customer' && userName) {
+      return all.filter(o => o.orderedBy === userName);
+    }
+    // Cook, Waiter, Manager see all
+    return all;
+  },
+
+  createOrder(orderData: Omit<Order, 'id' | 'status' | 'timestamp'>): Order {
+    const orders = this.getOrders();
+    const newOrder: Order = {
+      ...orderData,
+      id: `ORD-${Date.now().toString().slice(-6)}`,
+      status: 'Pending',
+      timestamp: new Date().toISOString()
+    };
+    orders.unshift(newOrder);
+    localStorage.setItem(KEYS.ORDERS, JSON.stringify(orders));
+    return newOrder;
+  },
+
+  updateOrderStatus(orderId: string, status: Order['status']) {
+    const orders = this.getOrders();
+    const index = orders.findIndex(o => o.id === orderId);
+    if (index !== -1) {
+      orders[index].status = status;
+      localStorage.setItem(KEYS.ORDERS, JSON.stringify(orders));
+    }
+    return orders[index];
+  },
+
   resetToPublicData() {
     localStorage.removeItem(KEYS.ROOMS);
     localStorage.removeItem(KEYS.USERS);
     localStorage.removeItem(KEYS.MENU);
     localStorage.removeItem(KEYS.BOOKINGS);
+    localStorage.removeItem(KEYS.ORDERS);
     localStorage.removeItem(KEYS.INIT);
     window.location.reload();
   }
