@@ -1,46 +1,83 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, Users, Coffee, MessageSquare, Settings, Folder, Menu, X } from 'lucide-react';
+import { 
+  LayoutDashboard, CalendarDays, Users, Coffee, MessageSquare, 
+  Settings, Folder, Menu, X, ClipboardList, Utensils, LogIn, LogOut,
+  ShoppingBag, SprayCan, BookOpen
+} from 'lucide-react';
 import { clsx } from 'clsx';
 
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  
+  // Get role from storage
+  const role = localStorage.getItem('hms_role') || 'Manager';
 
-  const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    { icon: CalendarDays, label: 'Bookings', path: '/bookings' },
-    { icon: Users, label: 'Staff', path: '/staff' },
-    { icon: Coffee, label: 'Kitchen', path: '/kitchen' },
-    { icon: MessageSquare, label: 'Messages', path: '/messages' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
-    { icon: Folder, label: 'Files', path: '/files' },
-  ];
+  // Define all possible items
+  const allNavItems = {
+    dashboard: { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    bookings: { icon: CalendarDays, label: 'Bookings', path: '/bookings' },
+    staff: { icon: Users, label: 'Staff', path: '/staff' },
+    kitchen: { icon: Coffee, label: 'Kitchen', path: '/kitchen' },
+    messages: { icon: MessageSquare, label: 'Messages', path: '/messages' },
+    settings: { icon: Settings, label: 'Settings', path: '/settings' },
+    files: { icon: Folder, label: 'Files', path: '/files' },
+    
+    // Role specific items
+    checkin: { icon: LogIn, label: 'Check-In', path: '/check-in' },
+    checkout: { icon: LogOut, label: 'Check-Out', path: '/check-out' },
+    orders: { icon: ShoppingBag, label: 'Orders', path: '/orders' },
+    kitchenOrders: { icon: Utensils, label: 'Kitchen Orders', path: '/kitchen-orders' },
+    cleaning: { icon: SprayCan, label: 'Cleaning', path: '/cleaning' },
+    myBooking: { icon: BookOpen, label: 'My Booking', path: '/my-booking' }
+  };
+
+  // Select items based on role
+  let navItems = [];
+  
+  switch(role) {
+    case 'Manager':
+      navItems = [
+        allNavItems.dashboard, allNavItems.bookings, allNavItems.staff, 
+        allNavItems.kitchen, allNavItems.messages, allNavItems.settings, allNavItems.files
+      ];
+      break;
+    case 'Receptionist':
+      navItems = [
+        allNavItems.dashboard, allNavItems.bookings, allNavItems.checkin, 
+        allNavItems.checkout, allNavItems.messages
+      ];
+      break;
+    case 'Waiter':
+      navItems = [allNavItems.dashboard, allNavItems.orders];
+      break;
+    case 'Cook':
+      navItems = [allNavItems.dashboard, allNavItems.kitchenOrders];
+      break;
+    case 'Housekeeper':
+      navItems = [allNavItems.dashboard, allNavItems.cleaning];
+      break;
+    case 'Customer':
+      navItems = [allNavItems.dashboard, allNavItems.myBooking, allNavItems.orders];
+      break;
+    default:
+      navItems = [allNavItems.dashboard];
+  }
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
-  // Handle Escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        closeSidebar();
-      }
+      if (e.key === 'Escape' && isOpen) closeSidebar();
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
 
-  // Focus trap: focus first link when opened
-  useEffect(() => {
-    if (isOpen && firstLinkRef.current) {
-      firstLinkRef.current.focus();
-    }
-  }, [isOpen]);
-
   return (
     <>
-      {/* Mobile Hamburger Button - Fixed Position Overlay */}
       <button 
         onClick={toggleSidebar}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-sm border border-gray-100 text-gray-600 hover:bg-gray-50 sm:hidden h-10 w-10 flex items-center justify-center"
@@ -49,7 +86,6 @@ const Sidebar: React.FC = () => {
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      {/* Backdrop */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 sm:hidden backdrop-blur-sm transition-opacity duration-300"
@@ -58,15 +94,13 @@ const Sidebar: React.FC = () => {
         />
       )}
 
-      {/* Sidebar Drawer */}
       <aside 
         className={clsx(
           "fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 h-screen flex flex-col transition-transform duration-300 ease-in-out w-64",
-          "sm:sticky sm:top-0 sm:translate-x-0 sm:z-0", // Desktop: sticky, always visible
-          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full sm:shadow-none" // Mobile toggle state
+          "sm:sticky sm:top-0 sm:translate-x-0 sm:z-0",
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full sm:shadow-none"
         )}
       >
-        {/* Mobile Close Button (Inside Drawer) */}
         <div className="absolute top-4 right-4 sm:hidden">
             <button 
                 onClick={closeSidebar}
@@ -83,8 +117,12 @@ const Sidebar: React.FC = () => {
           </div>
           <span className="ml-3 font-bold text-gray-800 text-xl">HMS</span>
         </div>
+        
+        <div className="px-8 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          {role} View
+        </div>
 
-        <nav className="flex-1 py-6 space-y-2 px-3 overflow-y-auto">
+        <nav className="flex-1 py-4 space-y-2 px-3 overflow-y-auto">
           {navItems.map((item, index) => (
             <NavLink
               key={item.path}
