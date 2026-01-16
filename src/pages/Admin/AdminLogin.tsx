@@ -18,7 +18,7 @@ const AdminLogin: React.FC = () => {
     if (user) {
         if (user.role === 'Customer') {
             AuthService.logout();
-            setError('Customer accounts cannot access the admin portal. Please use /login');
+            setError('Customers must login from /login');
             return;
         }
         navigate(AuthService.getDashboardPath(user.role));

@@ -93,48 +93,80 @@ export const DataService = {
    * Initialize data from JSON files if not present in localStorage.
    */
   async initialize() {
-    if (localStorage.getItem(KEYS.INIT)) {
-      return; // Data already exists
-    }
+    const isInitialized = localStorage.getItem(KEYS.INIT);
 
-    try {
-      // Use allSettled to allow some files to fail
-      const results = await Promise.allSettled([
-        fetch('/data/rooms.json'),
-        fetch('/data/users.json'),
-        fetch('/data/menu.json'),
-        fetch('/data/bookings.json'),
-        fetch('/data/orders.json'),
-        fetch('/data/tasks.json'),
-        fetch('/data/issues.json')
-      ]);
+    if (!isInitialized) {
+      try {
+        // Use allSettled to allow some files to fail
+        const results = await Promise.allSettled([
+          fetch('/data/rooms.json'),
+          fetch('/data/users.json'),
+          fetch('/data/menu.json'),
+          fetch('/data/bookings.json'),
+          fetch('/data/orders.json'),
+          fetch('/data/tasks.json'),
+          fetch('/data/issues.json')
+        ]);
 
-      const handleResponse = async (result: PromiseSettledResult<Response>, key: string, defaultVal: any) => {
-        if (result.status === 'fulfilled' && result.value.ok) {
-          try {
-            const data = await result.value.json();
-            localStorage.setItem(key, JSON.stringify(data));
-          } catch (e) {
-            console.warn(`Failed to parse JSON for ${key}`, e);
+        const handleResponse = async (result: PromiseSettledResult<Response>, key: string, defaultVal: any) => {
+          if (result.status === 'fulfilled' && result.value.ok) {
+            try {
+              const data = await result.value.json();
+              localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+              console.warn(`Failed to parse JSON for ${key}`, e);
+              localStorage.setItem(key, JSON.stringify(defaultVal));
+            }
+          } else {
             localStorage.setItem(key, JSON.stringify(defaultVal));
           }
-        } else {
-          localStorage.setItem(key, JSON.stringify(defaultVal));
-        }
-      };
+        };
 
-      await handleResponse(results[0], KEYS.ROOMS, []);
-      await handleResponse(results[1], KEYS.USERS, []);
-      await handleResponse(results[2], KEYS.MENU, []);
-      await handleResponse(results[3], KEYS.BOOKINGS, []);
-      await handleResponse(results[4], KEYS.ORDERS, []);
-      await handleResponse(results[5], KEYS.TASKS, []);
-      await handleResponse(results[6], KEYS.ISSUES, []);
+        await handleResponse(results[0], KEYS.ROOMS, []);
+        await handleResponse(results[1], KEYS.USERS, []);
+        await handleResponse(results[2], KEYS.MENU, []);
+        await handleResponse(results[3], KEYS.BOOKINGS, []);
+        await handleResponse(results[4], KEYS.ORDERS, []);
+        await handleResponse(results[5], KEYS.TASKS, []);
+        await handleResponse(results[6], KEYS.ISSUES, []);
 
-      localStorage.setItem(KEYS.INIT, 'true');
-      console.log('HMS: Data initialized.');
-    } catch (error) {
-      console.error('HMS: Failed to initialize data', error);
+        localStorage.setItem(KEYS.INIT, 'true');
+        console.log('HMS: Data initialized.');
+      } catch (error) {
+        console.error('HMS: Failed to initialize data', error);
+      }
+    }
+
+    // Ensure default users exist (even if previously initialized)
+    this.ensureDefaultUsers();
+  },
+
+  ensureDefaultUsers() {
+    const REQUIRED_USERS = [
+      { name: "Manager", role: "Manager", email: "manager@gmail.com", password: "manager123" },
+      { name: "Receptionist", role: "Receptionist", email: "receptionist@gmail.com", password: "receptionist123" },
+      { name: "Waiter", role: "Waiter", email: "waiter@gmail.com", password: "waiter123" },
+      { name: "Cook", role: "Cook", email: "cook@gmail.com", password: "cook123" },
+      { name: "Housekeeper", role: "Housekeeper", email: "housekeeper@gmail.com", password: "housekeeper123" },
+      { name: "Customer", role: "Customer", email: "customer@gmail.com", password: "customer123" }
+    ];
+
+    const users = this.getUsers();
+    let updated = false;
+
+    REQUIRED_USERS.forEach(req => {
+      if (!users.some(u => u.email.toLowerCase() === req.email.toLowerCase())) {
+        users.push({
+          id: Date.now() + Math.floor(Math.random() * 10000),
+          ...req
+        });
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      localStorage.setItem(KEYS.USERS, JSON.stringify(users));
+      console.log('HMS: Default credentials enforced');
     }
   },
 
