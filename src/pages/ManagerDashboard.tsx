@@ -70,18 +70,14 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
       if (typeof result === 'string') {
           setStaffError(result);
       } else {
-          // Manually override the role in localStorage since register defaults to Customer
-          const users = DataService.getUsers();
-          const userIndex = users.findIndex(u => u.email === newStaff.email);
-          if (userIndex !== -1) {
-              users[userIndex].role = newStaff.role;
-              localStorage.setItem('hms_users', JSON.stringify(users));
-              
-              // Refresh local state
-              setStaffList(users.filter(u => u.role !== 'Customer'));
-              setStaffSuccess(`Staff member ${newStaff.name} created successfully as ${newStaff.role}.`);
-              setNewStaff({ name: '', email: '', password: '', role: 'Receptionist' });
-          }
+          // Successfully created user, now update role from default 'Customer' to selected staff role
+          const updatedUser = { ...result, role: newStaff.role };
+          DataService.updateUser(updatedUser);
+          
+          // Refresh local state
+          setStaffList(DataService.getUsers().filter(u => u.role !== 'Customer'));
+          setStaffSuccess(`Staff member ${newStaff.name} created successfully as ${newStaff.role}.`);
+          setNewStaff({ name: '', email: '', password: '', role: 'Receptionist' });
       }
   };
 

@@ -191,6 +191,15 @@ export const DataService = {
     return newUser;
   },
 
+  updateUser(updatedUser: User) {
+    const users = this.getUsers();
+    const index = users.findIndex(u => u.id === updatedUser.id);
+    if (index !== -1) {
+      users[index] = updatedUser;
+      localStorage.setItem(KEYS.USERS, JSON.stringify(users));
+    }
+  },
+
   getMenu(): MenuItem[] {
     const data = localStorage.getItem(KEYS.MENU);
     return data ? JSON.parse(data) : [];
