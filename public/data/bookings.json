@@ -1,0 +1,5 @@
+[
+  { "id": "BK-001", "guestName": "Faruk Ahmad", "roomNumber": "1420", "checkIn": "2023-01-20", "checkOut": "2023-01-28", "status": "Active" },
+  { "id": "BK-002", "guestName": "Yeasin Arafat", "roomNumber": "1430", "checkIn": "2023-01-21", "checkOut": "2023-01-28", "status": "Active" },
+  { "id": "BK-003", "guestName": "Rakib Hassan", "roomNumber": "1422", "checkIn": "2023-03-01", "checkOut": "2023-03-05", "status": "Confirmed" }
+]

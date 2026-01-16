@@ -1,0 +1,5 @@
+[
+  { "id": "101", "type": "Single", "status": "Occupied", "price": 100, "floor": 1 },
+  { "id": "102", "type": "Double", "status": "Vacant", "price": 150, "floor": 1 },
+  { "id": "201", "type": "Suite", "status": "Not Ready", "price": 300, "floor": 2 }
+]

@@ -1,0 +1,5 @@
+[
+  { "id": 1, "item": "Club Sandwich", "price": 12, "category": "Food" },
+  { "id": 2, "item": "Espresso", "price": 4, "category": "Beverage" },
+  { "id": 3, "item": "Caesar Salad", "price": 10, "category": "Food" }
+]
