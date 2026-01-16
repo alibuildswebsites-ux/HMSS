@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { X, ShoppingCart, Plus, Minus, Utensils } from 'lucide-react';
+import { X, ShoppingCart, Utensils } from 'lucide-react';
 import { MenuItem } from '../services/dataService';
+import { MenuCard } from './MenuCard';
 import clsx from 'clsx';
 
 interface OrderModalProps {
@@ -19,7 +20,6 @@ const OrderModal: React.FC<OrderModalProps> = ({
   const [location, setLocation] = useState(defaultLocation || '');
   const [error, setError] = useState('');
 
-  // Reset state when opening if needed, but here simple implementation
   if (!isOpen) return null;
 
   const updateQty = (id: number, delta: number) => {
@@ -64,7 +64,7 @@ const OrderModal: React.FC<OrderModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50 shrink-0">
@@ -72,66 +72,53 @@ const OrderModal: React.FC<OrderModalProps> = ({
             <Utensils className="w-5 h-5 text-green-600"/> 
             {role === 'Customer' ? 'Room Service' : 'New Order'}
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors" aria-label="Close modal">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
             
             {/* Menu Section */}
-            <div className="flex-1 space-y-4">
-              <h4 className="font-semibold text-gray-700">Menu</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white">
+              <h4 className="font-semibold text-gray-700 mb-4 sticky top-0 bg-white py-2 z-10">Menu</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {menuItems.map(item => (
-                  <div key={item.id} className="border border-gray-100 rounded-lg p-3 hover:shadow-md transition-shadow bg-white flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <span className="font-medium text-gray-800">{item.item}</span>
-                        <span className="text-green-600 font-bold text-sm">${item.price}</span>
-                      </div>
-                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full mt-1 inline-block">{item.category}</span>
-                    </div>
-                    <div className="mt-3 flex items-center justify-end gap-2">
-                      {cart[item.id] ? (
-                        <>
-                          <button onClick={() => updateQty(item.id, -1)} className="p-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-sm font-bold w-4 text-center">{cart[item.id]}</span>
-                          <button onClick={() => updateQty(item.id, 1)} className="p-1 bg-green-100 rounded hover:bg-green-200 text-green-700">
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </>
-                      ) : (
-                        <button onClick={() => updateQty(item.id, 1)} className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-800 transition-colors">
-                          Add
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <MenuCard 
+                    key={item.id} 
+                    item={item} 
+                    qty={cart[item.id] || 0} 
+                    onUpdateQty={(delta) => updateQty(item.id, delta)} 
+                  />
                 ))}
               </div>
             </div>
 
             {/* Cart Section */}
-            <div className="w-full md:w-1/3 bg-gray-50 rounded-xl p-4 border border-gray-100 h-fit shrink-0">
-              <h4 className="font-semibold text-gray-700 flex items-center gap-2 mb-4">
-                <ShoppingCart className="w-4 h-4"/> Current Order
-              </h4>
+            <div className="w-full md:w-80 lg:w-96 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-100 flex flex-col shrink-0 h-1/3 md:h-auto">
+              <div className="p-4 border-b border-gray-200 bg-gray-100/50">
+                <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                    <ShoppingCart className="w-4 h-4"/> Your Order
+                </h4>
+              </div>
               
-              <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {Object.keys(cart).length === 0 ? (
-                  <p className="text-sm text-gray-400 italic text-center py-4">Select items from menu</p>
+                  <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                    <ShoppingCart className="w-8 h-8 mb-2 opacity-20"/>
+                    <p className="text-sm italic">Cart is empty</p>
+                  </div>
                 ) : (
                   Object.entries(cart).map(([id, qty]) => {
                     const item = menuItems.find(i => i.id === Number(id));
                     if (!item) return null;
                     return (
-                      <div key={id} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{qty}x {item.item}</span>
+                      <div key={id} className="flex justify-between items-center text-sm bg-white p-3 rounded border border-gray-100 shadow-sm">
+                        <div>
+                            <span className="font-bold text-gray-800 mr-2">{qty}x</span>
+                            <span className="text-gray-600">{item.item}</span>
+                        </div>
                         <span className="font-medium text-gray-900">${item.price * Number(qty)}</span>
                       </div>
                     );
@@ -139,7 +126,7 @@ const OrderModal: React.FC<OrderModalProps> = ({
                 )}
               </div>
 
-              <div className="border-t border-gray-200 pt-3 space-y-3">
+              <div className="p-4 border-t border-gray-200 bg-white space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <div className="flex justify-between font-bold text-lg text-gray-800">
                   <span>Total</span>
                   <span>${cartTotal}</span>
@@ -166,13 +153,12 @@ const OrderModal: React.FC<OrderModalProps> = ({
 
                 <button 
                   onClick={handleSubmit}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition-all shadow-sm active:scale-[0.98]"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-all shadow-sm active:scale-[0.98] flex justify-center items-center gap-2"
                 >
-                  Place Order
+                  <Utensils className="w-4 h-4" /> Place Order
                 </button>
               </div>
             </div>
-          </div>
         </div>
       </div>
     </div>

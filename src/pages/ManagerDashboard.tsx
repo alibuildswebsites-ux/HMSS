@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { DataService, Room, Booking, Order } from '../services/dataService';
 import StatsCard from '../components/StatsCard';
 import BookingChart from '../components/BookingChart';
-import { ClipboardList, CheckCircle, XCircle, Utensils, Clock } from 'lucide-react';
+import { ClipboardList, CheckCircle, Utensils, Clock, Flame, Ban } from 'lucide-react';
 
 const ManagerDashboard: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -18,7 +18,6 @@ const ManagerDashboard: React.FC = () => {
   // Derived Statistics
   const vacant = rooms.filter(r => r.status === 'Vacant').length;
   const occupied = rooms.filter(r => r.status === 'Occupied').length;
-  const notReady = rooms.filter(r => r.status === 'Not Ready').length;
   
   const total = rooms.length || 1;
   const vacantPct = (vacant / total) * 100;
@@ -26,10 +25,12 @@ const ManagerDashboard: React.FC = () => {
 
   const totalBookings = bookings.length;
   const confirmedBookings = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Active').length;
-  const cancelledBookings = bookings.filter(b => b.status === 'Cancelled').length;
 
   const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+  const preparingOrders = orders.filter(o => o.status === 'Preparing').length;
+  const readyOrders = orders.filter(o => o.status === 'Ready').length;
   const servedOrders = orders.filter(o => o.status === 'Served').length;
+  const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
 
   return (
     <div className="w-full max-w-full overflow-hidden p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -63,21 +64,22 @@ const ManagerDashboard: React.FC = () => {
             }
         />
 
-        {/* Restaurant Stats (NEW) */}
+        {/* Restaurant Stats (Detailed) */}
         <StatsCard 
-            title="Restaurant"
+            title="Kitchen Status"
             stats={[
-                { label: 'Pending', value: pendingOrders, icon: <Clock className="w-4 h-4 text-yellow-500"/> },
-                { label: 'Served', value: servedOrders, icon: <Utensils className="w-4 h-4 text-blue-500"/> },
+                { label: 'Pending', value: pendingOrders, icon: <Clock className="w-4 h-4 text-red-500"/> },
+                { label: 'Cooking', value: preparingOrders, icon: <Flame className="w-4 h-4 text-yellow-500"/> },
+                { label: 'Ready', value: readyOrders, icon: <CheckCircle className="w-4 h-4 text-green-500"/> },
             ]}
         />
 
-        {/* Revenue Stats */}
+        {/* Restaurant Performance */}
         <StatsCard 
-            title="Revenue"
+            title="Orders Fulfillment"
             stats={[
-                { label: 'Today', value: '$350' },
-                { label: 'Month', value: '$4.5k' },
+                { label: 'Served', value: servedOrders, icon: <Utensils className="w-4 h-4 text-blue-500"/> },
+                { label: 'Cancelled', value: cancelledOrders, icon: <Ban className="w-4 h-4 text-gray-400"/> },
             ]}
         />
       </div>
