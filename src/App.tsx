@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
+import ManagerDashboard from './pages/ManagerDashboard';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import { DataService } from './services/dataService';
@@ -36,6 +37,7 @@ const App: React.FC = () => {
         {/* Protected Routes Wrapper */}
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="reports" element={<ManagerDashboard initialTab="reports" />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

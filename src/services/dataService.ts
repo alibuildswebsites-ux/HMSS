@@ -312,6 +312,73 @@ export const DataService = {
     }
   },
 
+  // --- Analytics ---
+
+  getAnalytics() {
+    const rooms = this.getRooms();
+    const bookings = this.getBookings();
+    const orders = this.getOrders();
+    const tasks = this.getHousekeepingTasks();
+    const issues = this.getMaintenanceIssues();
+
+    // Occupancy
+    const totalRooms = rooms.length || 1;
+    const occupiedRooms = rooms.filter(r => r.status === 'Occupied').length;
+    const occupancyRate = Math.round((occupiedRooms / totalRooms) * 100);
+
+    // Bookings
+    const totalBookings = bookings.length;
+    const confirmedBookings = bookings.filter(b => b.status === 'Confirmed').length;
+    const activeBookings = bookings.filter(b => b.status === 'Active').length;
+    const cancelledBookings = bookings.filter(b => b.status === 'Cancelled').length;
+    const completedBookings = bookings.filter(b => b.status === 'Completed').length;
+
+    // Orders
+    const totalOrders = orders.length;
+    const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+    const servedOrders = orders.filter(o => o.status === 'Served').length;
+    const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
+
+    // Housekeeping
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+    const pendingTasks = tasks.filter(t => t.status === 'Pending').length;
+    const inProgressTasks = tasks.filter(t => t.status === 'In Progress').length;
+
+    // Maintenance
+    const totalIssues = issues.length;
+    const openIssues = issues.filter(i => i.status === 'Open').length;
+    const resolvedIssues = issues.filter(i => i.status === 'Resolved').length;
+
+    return {
+      occupancy: { rate: occupancyRate, total: totalRooms, occupied: occupiedRooms },
+      bookings: { 
+        total: totalBookings, 
+        confirmed: confirmedBookings, 
+        active: activeBookings, 
+        cancelled: cancelledBookings, 
+        completed: completedBookings 
+      },
+      orders: { 
+        total: totalOrders, 
+        pending: pendingOrders, 
+        served: servedOrders, 
+        cancelled: cancelledOrders 
+      },
+      housekeeping: { 
+        total: totalTasks, 
+        completed: completedTasks, 
+        pending: pendingTasks, 
+        inProgress: inProgressTasks 
+      },
+      maintenance: { 
+        total: totalIssues, 
+        open: openIssues, 
+        resolved: resolvedIssues 
+      }
+    };
+  },
+
   resetToPublicData() {
     localStorage.clear();
     window.location.reload();
