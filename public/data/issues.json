@@ -1,0 +1,22 @@
+[
+  {
+    "id": "ISS-001",
+    "roomId": "102",
+    "roomNumber": "102",
+    "description": "Air conditioner leaking water",
+    "priority": "High",
+    "status": "Open",
+    "reportedBy": "John Doe",
+    "timestamp": "2023-10-26T14:30:00"
+  },
+  {
+    "id": "ISS-002",
+    "roomId": "101",
+    "roomNumber": "101",
+    "description": "Bathroom light flickering",
+    "priority": "Low",
+    "status": "Resolved",
+    "reportedBy": "Sarah Smith",
+    "timestamp": "2023-10-25T09:15:00"
+  }
+]

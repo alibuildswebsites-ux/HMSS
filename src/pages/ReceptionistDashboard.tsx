@@ -1,30 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import StatsCard from '../components/StatsCard';
 import BookingModal from '../components/BookingModal';
-import { DataService, Room, Booking } from '../services/dataService';
-import { Users, LogIn, LogOut, Clock, Filter, BedDouble, Search } from 'lucide-react';
+import TaskModal from '../components/TaskModal';
+import { DataService, Room, Booking, User, Task } from '../services/dataService';
+import { Users, LogIn, LogOut, Clock, BedDouble, Search, SprayCan } from 'lucide-react';
 import clsx from 'clsx';
 
 const ReceptionistDashboard: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [filterStatus, setFilterStatus] = useState<'All' | 'Vacant' | 'Occupied'>('All');
+  const [users, setUsers] = useState<User[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filterStatus, setFilterStatus] = useState<'All' | 'Vacant' | 'Occupied' | 'Not Ready'>('All');
   const [feedback, setFeedback] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
-  // Booking Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Modals State
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const loadData = () => {
     setRooms(DataService.getRooms());
     setBookings(DataService.getBookings());
+    setUsers(DataService.getUsers());
+    setTasks(DataService.getHousekeepingTasks());
   };
 
   useEffect(() => {
     loadData();
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Clear feedback after 3 seconds
   useEffect(() => {
     if (feedback) {
       const timer = setTimeout(() => setFeedback(null), 3000);
@@ -34,7 +41,7 @@ const ReceptionistDashboard: React.FC = () => {
 
   const handleBookClick = (room: Room) => {
     setSelectedRoom(room);
-    setIsModalOpen(true);
+    setIsBookingModalOpen(true);
   };
 
   const handleConfirmBooking = (checkIn: string, checkOut: string, guestName: string) => {
@@ -43,7 +50,7 @@ const ReceptionistDashboard: React.FC = () => {
         roomId: selectedRoom.id,
         roomNumber: selectedRoom.id,
         guestName: guestName,
-        userRole: 'Receptionist', // Booked by receptionist
+        userRole: 'Receptionist',
         checkIn,
         checkOut,
       });
@@ -60,9 +67,24 @@ const ReceptionistDashboard: React.FC = () => {
     }
   };
 
+  const handleCreateTask = (roomId: string, assignee: string, type: 'Cleaning' | 'Deep Clean' | 'Inspection', date: string, notes: string) => {
+      DataService.createHousekeepingTask({
+          roomId,
+          roomNumber: roomId,
+          assignee,
+          type,
+          date,
+          notes
+      });
+      loadData();
+      setFeedback({ message: 'Cleaning task assigned.', type: 'success' });
+  };
+
   const filteredRooms = filterStatus === 'All' 
     ? rooms 
     : rooms.filter(r => r.status === filterStatus);
+  
+  const pendingTasks = tasks.filter(t => t.status === 'Pending').length;
 
   return (
     <div className="w-full p-4 sm:p-6 space-y-6 relative">
@@ -78,8 +100,13 @@ const ReceptionistDashboard: React.FC = () => {
 
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Reception Desk</h2>
-        <div className="text-sm text-gray-500">
-           {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <div className="flex gap-2">
+            <button 
+                onClick={() => setIsTaskModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+            >
+                <SprayCan className="w-4 h-4" /> Assign Cleaning
+            </button>
         </div>
       </div>
 
@@ -99,9 +126,9 @@ const ReceptionistDashboard: React.FC = () => {
           ]}
         />
         <StatsCard 
-          title="Front Desk"
+          title="Housekeeping"
           stats={[
-            { label: 'Available Rooms', value: rooms.filter(r => r.status === 'Vacant').length, icon: <Clock className="w-4 h-4 text-yellow-500"/> }
+            { label: 'Pending Tasks', value: pendingTasks, icon: <SprayCan className="w-4 h-4 text-orange-500"/> }
           ]}
         />
       </div>
@@ -113,7 +140,7 @@ const ReceptionistDashboard: React.FC = () => {
                 <BedDouble className="w-5 h-5 text-gray-500"/> Room Status
             </h3>
             <div className="flex gap-2">
-                {(['All', 'Vacant', 'Occupied'] as const).map(status => (
+                {(['All', 'Vacant', 'Occupied', 'Not Ready'] as const).map(status => (
                     <button
                         key={status}
                         onClick={() => setFilterStatus(status)}
@@ -136,7 +163,7 @@ const ReceptionistDashboard: React.FC = () => {
                     "p-3 rounded-lg border flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-[1.02]",
                     room.status === 'Vacant' ? "bg-green-50 border-green-100 hover:border-green-300" :
                     room.status === 'Occupied' ? "bg-red-50 border-red-100 opacity-90" :
-                    "bg-gray-50 border-gray-200 opacity-75"
+                    "bg-orange-50 border-orange-200 opacity-90"
                 )}
                 onClick={() => room.status === 'Vacant' && handleBookClick(room)}
                 >
@@ -145,7 +172,7 @@ const ReceptionistDashboard: React.FC = () => {
                         "text-[10px] font-bold uppercase mt-1 px-1.5 py-0.5 rounded",
                         room.status === 'Vacant' ? "text-green-700 bg-green-100" :
                         room.status === 'Occupied' ? "text-red-700 bg-red-100" :
-                        "text-gray-600 bg-gray-200"
+                        "text-orange-700 bg-orange-100"
                     )}>{room.status}</span>
                     <span className="text-[10px] text-gray-400 mt-1">{room.type}</span>
                 </div>
@@ -208,12 +235,20 @@ const ReceptionistDashboard: React.FC = () => {
       </div>
 
       <BookingModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
         room={selectedRoom}
         onConfirm={handleConfirmBooking}
         currentUserRole="Receptionist"
         currentUserName=""
+      />
+
+      <TaskModal 
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        rooms={rooms}
+        staff={users}
+        onConfirm={handleCreateTask}
       />
     </div>
   );

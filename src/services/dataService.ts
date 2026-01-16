@@ -10,6 +10,8 @@ const KEYS = {
   MENU: 'hms_menu',
   BOOKINGS: 'hms_bookings',
   ORDERS: 'hms_orders',
+  TASKS: 'hms_tasks',
+  ISSUES: 'hms_issues',
   INIT: 'hms_initialized'
 };
 
@@ -63,6 +65,28 @@ export interface Order {
   timestamp: string;
 }
 
+export interface Task {
+  id: string;
+  roomId: string;
+  roomNumber: string;
+  assignee: string; // Housekeeper name
+  status: 'Pending' | 'In Progress' | 'Completed';
+  type: 'Cleaning' | 'Deep Clean' | 'Inspection';
+  date: string;
+  notes?: string;
+}
+
+export interface Issue {
+  id: string;
+  roomId: string;
+  roomNumber: string;
+  description: string;
+  priority: 'Low' | 'Medium' | 'High';
+  status: 'Open' | 'In Progress' | 'Resolved';
+  reportedBy: string;
+  timestamp: string;
+}
+
 export const DataService = {
   /**
    * Initialize data from JSON files if not present in localStorage.
@@ -73,13 +97,15 @@ export const DataService = {
     }
 
     try {
-      // Use allSettled to allow some files to fail (like orders.json if not present yet)
+      // Use allSettled to allow some files to fail
       const results = await Promise.allSettled([
         fetch('/data/rooms.json'),
         fetch('/data/users.json'),
         fetch('/data/menu.json'),
         fetch('/data/bookings.json'),
-        fetch('/data/orders.json')
+        fetch('/data/orders.json'),
+        fetch('/data/tasks.json'),
+        fetch('/data/issues.json')
       ]);
 
       const handleResponse = async (result: PromiseSettledResult<Response>, key: string, defaultVal: any) => {
@@ -101,6 +127,8 @@ export const DataService = {
       await handleResponse(results[2], KEYS.MENU, []);
       await handleResponse(results[3], KEYS.BOOKINGS, []);
       await handleResponse(results[4], KEYS.ORDERS, []);
+      await handleResponse(results[5], KEYS.TASKS, []);
+      await handleResponse(results[6], KEYS.ISSUES, []);
 
       localStorage.setItem(KEYS.INIT, 'true');
       console.log('HMS: Data initialized.');
@@ -190,7 +218,6 @@ export const DataService = {
     if (role === 'Customer' && userName) {
       return all.filter(o => o.orderedBy === userName);
     }
-    // Cook, Waiter, Manager see all
     return all;
   },
 
@@ -217,13 +244,76 @@ export const DataService = {
     return orders[index];
   },
 
+  // --- Housekeeping Tasks ---
+
+  getHousekeepingTasks(): Task[] {
+    const data = localStorage.getItem(KEYS.TASKS);
+    return data ? JSON.parse(data) : [];
+  },
+
+  createHousekeepingTask(task: Omit<Task, 'id' | 'status'>): Task {
+    const tasks = this.getHousekeepingTasks();
+    const newTask: Task = {
+      ...task,
+      id: `TSK-${Date.now().toString().slice(-6)}`,
+      status: 'Pending'
+    };
+    tasks.unshift(newTask);
+    localStorage.setItem(KEYS.TASKS, JSON.stringify(tasks));
+    
+    // Automatically mark room as Not Ready when task created if it's cleaning
+    if (task.type.includes('Clean')) {
+      this.updateRoomStatus(task.roomId, 'Not Ready');
+    }
+    
+    return newTask;
+  },
+
+  updateHousekeepingTaskStatus(taskId: string, status: Task['status']) {
+    const tasks = this.getHousekeepingTasks();
+    const index = tasks.findIndex(t => t.id === taskId);
+    if (index !== -1) {
+      tasks[index].status = status;
+      localStorage.setItem(KEYS.TASKS, JSON.stringify(tasks));
+      
+      // If completed, mark room as Vacant (Ready)
+      if (status === 'Completed') {
+        this.updateRoomStatus(tasks[index].roomId, 'Vacant');
+      }
+    }
+  },
+
+  // --- Maintenance Issues ---
+
+  getMaintenanceIssues(): Issue[] {
+    const data = localStorage.getItem(KEYS.ISSUES);
+    return data ? JSON.parse(data) : [];
+  },
+
+  createMaintenanceIssue(issue: Omit<Issue, 'id' | 'status' | 'timestamp'>): Issue {
+    const issues = this.getMaintenanceIssues();
+    const newIssue: Issue = {
+      ...issue,
+      id: `ISS-${Date.now().toString().slice(-6)}`,
+      status: 'Open',
+      timestamp: new Date().toISOString()
+    };
+    issues.unshift(newIssue);
+    localStorage.setItem(KEYS.ISSUES, JSON.stringify(issues));
+    return newIssue;
+  },
+
+  updateMaintenanceIssueStatus(issueId: string, status: Issue['status']) {
+    const issues = this.getMaintenanceIssues();
+    const index = issues.findIndex(i => i.id === issueId);
+    if (index !== -1) {
+      issues[index].status = status;
+      localStorage.setItem(KEYS.ISSUES, JSON.stringify(issues));
+    }
+  },
+
   resetToPublicData() {
-    localStorage.removeItem(KEYS.ROOMS);
-    localStorage.removeItem(KEYS.USERS);
-    localStorage.removeItem(KEYS.MENU);
-    localStorage.removeItem(KEYS.BOOKINGS);
-    localStorage.removeItem(KEYS.ORDERS);
-    localStorage.removeItem(KEYS.INIT);
+    localStorage.clear();
     window.location.reload();
   }
 };
