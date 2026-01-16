@@ -22,8 +22,10 @@ export interface Room {
 
 export interface Booking {
   id: string;
-  guestName: string;
+  roomId: string;
   roomNumber: string;
+  guestName: string;
+  userRole?: string;
   checkIn: string;
   checkOut: string;
   status: 'Active' | 'Confirmed' | 'Completed' | 'Cancelled';
@@ -94,11 +96,64 @@ export const DataService = {
 
   getBookings(): Booking[] {
     const data = localStorage.getItem(KEYS.BOOKINGS);
-    return data ? JSON.parse(data) : [];
+    let bookings: Booking[] = data ? JSON.parse(data) : [];
+    
+    // Ensure compatibility if roomId is missing in old data
+    return bookings.map(b => ({
+      ...b,
+      roomId: b.roomId || b.roomNumber // Fallback mapping
+    }));
+  },
+
+  getBookingsByRole(role: string, userName?: string): Booking[] {
+    const all = this.getBookings();
+    if (role === 'Customer' && userName) {
+      return all.filter(b => b.guestName === userName);
+    }
+    // Receptionist/Manager see all
+    return all;
   },
 
   saveBookings(bookings: Booking[]) {
     localStorage.setItem(KEYS.BOOKINGS, JSON.stringify(bookings));
+  },
+
+  createBooking(booking: Omit<Booking, 'id' | 'status'>) {
+    const bookings = this.getBookings();
+    const newBooking: Booking = {
+      ...booking,
+      id: `BK-${Date.now().toString().slice(-6)}`,
+      status: 'Confirmed'
+    };
+    bookings.unshift(newBooking); // Add to top
+    this.saveBookings(bookings);
+    
+    // Strict Rule: Update room status to Occupied on booking
+    this.updateRoomStatus(booking.roomId, 'Occupied');
+    return newBooking;
+  },
+
+  cancelBooking(bookingId: string) {
+    const bookings = this.getBookings();
+    const index = bookings.findIndex(b => b.id === bookingId);
+    
+    if (index !== -1) {
+      const roomId = bookings[index].roomId;
+      bookings[index].status = 'Cancelled';
+      this.saveBookings(bookings);
+      
+      // Strict Rule: Update room status to Available (Vacant) on cancel
+      this.updateRoomStatus(roomId, 'Vacant');
+    }
+  },
+
+  updateRoomStatus(roomId: string, status: Room['status']) {
+    const rooms = this.getRooms();
+    const index = rooms.findIndex(r => r.id === roomId);
+    if (index !== -1) {
+      rooms[index].status = status;
+      localStorage.setItem(KEYS.ROOMS, JSON.stringify(rooms));
+    }
   },
 
   /**
