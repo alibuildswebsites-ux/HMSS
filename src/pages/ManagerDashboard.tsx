@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { DataService, Room, Booking, Order, Issue } from '../services/dataService';
+import { DataService, Room, Booking, Order, Issue, User } from '../services/dataService';
+import { AuthService } from '../services/authService';
 import StatsCard from '../components/StatsCard';
 import BookingChart from '../components/BookingChart';
 import AnalyticsCharts from '../components/AnalyticsCharts';
-import { ClipboardList, CheckCircle, Utensils, Clock, Flame, Ban, AlertTriangle, Wrench, LayoutDashboard, FileText, SprayCan } from 'lucide-react';
+import { ClipboardList, CheckCircle, Utensils, Clock, Flame, Ban, AlertTriangle, Wrench, LayoutDashboard, FileText, SprayCan, BedDouble, Users, UserPlus } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ManagerDashboardProps {
-  initialTab?: 'overview' | 'reports';
+  initialTab?: 'overview' | 'reports' | 'staff';
 }
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overview' }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'reports'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'reports' | 'staff'>(initialTab);
   
   // Overview Data
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -19,30 +20,66 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
   const [orders, setOrders] = useState<Order[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
   
+  // Staff Data
+  const [staffList, setStaffList] = useState<User[]>([]);
+  const [newStaff, setNewStaff] = useState({ name: '', email: '', password: '', role: 'Receptionist' });
+  const [staffError, setStaffError] = useState('');
+  const [staffSuccess, setStaffSuccess] = useState('');
+
   // Analytics Data
   const [analytics, setAnalytics] = useState<any>(null);
 
   useEffect(() => {
-    // Set active tab based on prop if changed
     setActiveTab(initialTab);
   }, [initialTab]);
 
   useEffect(() => {
     const loadData = () => {
-        // Fetch raw data for overview
         setRooms(DataService.getRooms());
         setBookings(DataService.getBookings());
         setOrders(DataService.getOrders());
         setIssues(DataService.getMaintenanceIssues());
-
-        // Fetch analytics
+        setStaffList(DataService.getUsers().filter(u => u.role !== 'Customer'));
         setAnalytics(DataService.getAnalytics());
     };
 
     loadData();
-    const interval = setInterval(loadData, 5000); // Refresh data
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleCreateStaff = (e: React.FormEvent) => {
+      e.preventDefault();
+      setStaffError('');
+      setStaffSuccess('');
+      
+      if (!newStaff.name || !newStaff.email || !newStaff.password) {
+          setStaffError('All fields are required');
+          return;
+      }
+
+      if (newStaff.role === 'Manager') {
+          setStaffError('Cannot create Manager accounts via this form');
+          return;
+      }
+
+      const result = AuthService.register(newStaff.name, newStaff.email, newStaff.password);
+      
+      if (typeof result === 'string') {
+          setStaffError(result);
+      } else {
+          // Manually override the role since register defaults to Customer
+          const users = DataService.getUsers();
+          const userIndex = users.findIndex(u => u.email === newStaff.email);
+          if (userIndex !== -1) {
+              users[userIndex].role = newStaff.role;
+              localStorage.setItem('hms_users', JSON.stringify(users));
+              setStaffList(users.filter(u => u.role !== 'Customer'));
+              setStaffSuccess(`Staff member ${newStaff.name} created successfully.`);
+              setNewStaff({ name: '', email: '', password: '', role: 'Receptionist' });
+          }
+      }
+  };
 
   if (!analytics) return <div className="p-6">Loading...</div>;
 
@@ -55,7 +92,6 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
 
   const renderOverview = () => (
     <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
-      {/* Top Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard 
             title="Bookings"
@@ -94,7 +130,6 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
         />
       </div>
 
-      {/* Middle Row: Chart & Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100 w-full">
             <BookingChart />
@@ -125,15 +160,14 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
   const renderReports = () => (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Booking KPIs */}
         <StatsCard 
             title="Booking Analytics"
             stats={[
+                { label: 'Occupancy', value: `${analytics.occupancy.rate}%`, icon: <BedDouble className="w-4 h-4 text-purple-500"/> },
                 { label: 'Confirmed', value: analytics.bookings.confirmed, icon: <CheckCircle className="w-4 h-4 text-green-500"/> },
                 { label: 'Cancelled', value: analytics.bookings.cancelled, icon: <Ban className="w-4 h-4 text-red-500"/> },
             ]}
         />
-        {/* Restaurant KPIs */}
         <StatsCard 
             title="Restaurant Analytics"
             stats={[
@@ -141,30 +175,126 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
                 { label: 'Served', value: analytics.orders.served, icon: <CheckCircle className="w-4 h-4 text-green-500"/> },
             ]}
         />
-        {/* Housekeeping KPIs */}
         <StatsCard 
             title="Housekeeping Analytics"
             stats={[
                 { label: 'Completed', value: analytics.housekeeping.completed, icon: <CheckCircle className="w-4 h-4 text-green-500"/> },
                 { label: 'Pending', value: analytics.housekeeping.pending, icon: <SprayCan className="w-4 h-4 text-orange-500"/> },
+                { label: 'In Progress', value: analytics.housekeeping.inProgress, icon: <Clock className="w-4 h-4 text-blue-500"/> },
             ]}
         />
-        {/* Maintenance KPIs */}
         <StatsCard 
             title="Maintenance Analytics"
             stats={[
-                { label: 'Open Issues', value: analytics.maintenance.open, icon: <AlertTriangle className="w-4 h-4 text-red-500"/> },
+                { label: 'Open', value: analytics.maintenance.open, icon: <AlertTriangle className="w-4 h-4 text-red-500"/> },
+                { label: 'In Progress', value: analytics.maintenance.inProgress, icon: <Clock className="w-4 h-4 text-orange-500"/> },
                 { label: 'Resolved', value: analytics.maintenance.resolved, icon: <Wrench className="w-4 h-4 text-green-500"/> },
             ]}
         />
       </div>
-
-      {/* Charts Section */}
       <AnalyticsCharts 
         bookingData={analytics.bookings} 
         orderData={analytics.orders} 
       />
     </div>
+  );
+
+  const renderStaff = () => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+          {/* Create Staff Form */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-fit">
+              <h3 className="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-green-600"/> Add Staff
+              </h3>
+              <form onSubmit={handleCreateStaff} className="space-y-4">
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input 
+                          type="text"
+                          value={newStaff.name}
+                          onChange={e => setNewStaff({...newStaff, name: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none"
+                      />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input 
+                          type="email"
+                          value={newStaff.email}
+                          onChange={e => setNewStaff({...newStaff, email: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none"
+                      />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                      <select 
+                          value={newStaff.role}
+                          onChange={e => setNewStaff({...newStaff, role: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none bg-white"
+                      >
+                          <option value="Receptionist">Receptionist</option>
+                          <option value="Waiter">Waiter</option>
+                          <option value="Cook">Cook</option>
+                          <option value="Housekeeper">Housekeeper</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input 
+                          type="password"
+                          value={newStaff.password}
+                          onChange={e => setNewStaff({...newStaff, password: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none"
+                      />
+                  </div>
+                  
+                  {staffError && <div className="text-red-500 text-sm">{staffError}</div>}
+                  {staffSuccess && <div className="text-green-600 text-sm">{staffSuccess}</div>}
+                  
+                  <button type="submit" className="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors">
+                      Create Staff
+                  </button>
+              </form>
+          </div>
+
+          {/* Staff List */}
+          <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <h3 className="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600"/> Current Staff
+              </h3>
+              <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                      <thead className="bg-gray-50 border-b border-gray-100 text-gray-500">
+                          <tr>
+                              <th className="p-3">Name</th>
+                              <th className="p-3">Email</th>
+                              <th className="p-3">Role</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                          {staffList.map(staff => (
+                              <tr key={staff.id} className="hover:bg-gray-50/50">
+                                  <td className="p-3 font-medium text-gray-900">{staff.name}</td>
+                                  <td className="p-3 text-gray-600">{staff.email}</td>
+                                  <td className="p-3">
+                                      <span className={clsx(
+                                          "px-2 py-1 rounded-full text-xs font-bold",
+                                          staff.role === 'Manager' && "bg-purple-100 text-purple-700",
+                                          staff.role === 'Receptionist' && "bg-blue-100 text-blue-700",
+                                          staff.role === 'Cook' && "bg-red-100 text-red-700",
+                                          staff.role === 'Waiter' && "bg-orange-100 text-orange-700",
+                                          staff.role === 'Housekeeper' && "bg-green-100 text-green-700",
+                                      )}>
+                                          {staff.role}
+                                      </span>
+                                  </td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
   );
 
   return (
@@ -190,10 +320,21 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
             >
                 <FileText className="w-4 h-4" /> Reports
             </button>
+            <button 
+                onClick={() => setActiveTab('staff')}
+                className={clsx(
+                    "px-4 py-1.5 text-sm font-semibold rounded-md transition-all flex items-center gap-2",
+                    activeTab === 'staff' ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+            >
+                <Users className="w-4 h-4" /> Staff
+            </button>
         </div>
       </div>
 
-      {activeTab === 'overview' ? renderOverview() : renderReports()}
+      {activeTab === 'overview' && renderOverview()}
+      {activeTab === 'reports' && renderReports()}
+      {activeTab === 'staff' && renderStaff()}
     </div>
   );
 };

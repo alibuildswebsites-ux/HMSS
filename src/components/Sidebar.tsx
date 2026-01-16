@@ -1,38 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, CalendarDays, Users, Coffee, MessageSquare, 
   Settings, Folder, Menu, X, ClipboardList, Utensils, LogIn, LogOut,
   ShoppingBag, SprayCan, BookOpen, FileText
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { AuthService } from '../services/authService';
 
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const navigate = useNavigate();
   
-  // Get role from storage
-  const role = localStorage.getItem('currentRole') || 'Manager';
+  const user = AuthService.getCurrentUser();
+  const role = user?.role || 'Guest';
 
   // Define all possible items
   const allNavItems = {
-    overview: { icon: LayoutDashboard, label: 'Overview', path: '/' },
-    dashboard: { icon: LayoutDashboard, label: 'Dashboard', path: '/' }, // Generic dashboard link
-    reports: { icon: FileText, label: 'Reports', path: '/reports' },
-    bookings: { icon: CalendarDays, label: 'Bookings', path: '/bookings' },
-    staff: { icon: Users, label: 'Staff', path: '/staff' },
-    kitchen: { icon: Coffee, label: 'Kitchen', path: '/kitchen' },
-    messages: { icon: MessageSquare, label: 'Messages', path: '/messages' },
-    settings: { icon: Settings, label: 'Settings', path: '/settings' },
-    files: { icon: Folder, label: 'Files', path: '/files' },
+    overview: { icon: LayoutDashboard, label: 'Overview', path: '/manager-dashboard' },
+    reports: { icon: FileText, label: 'Reports', path: '/manager-dashboard' }, // Handled by internal tabs but link keeps active state concept
+    bookings: { icon: CalendarDays, label: 'Bookings', path: '/bookings' }, // Placeholder for future
     
     // Role specific items
-    checkin: { icon: LogIn, label: 'Check-In', path: '/check-in' },
-    checkout: { icon: LogOut, label: 'Check-Out', path: '/check-out' },
-    orders: { icon: ShoppingBag, label: 'Orders', path: '/orders' },
-    kitchenOrders: { icon: Utensils, label: 'Kitchen Orders', path: '/kitchen-orders' },
-    cleaningTasks: { icon: SprayCan, label: 'Cleaning Tasks', path: '/cleaning' },
-    myBooking: { icon: BookOpen, label: 'My Booking', path: '/my-booking' }
+    managerDash: { icon: LayoutDashboard, label: 'Dashboard', path: '/manager-dashboard' },
+    receptionistDash: { icon: LayoutDashboard, label: 'Dashboard', path: '/receptionist-dashboard' },
+    waiterDash: { icon: LayoutDashboard, label: 'Dashboard', path: '/waiter-dashboard' },
+    cookDash: { icon: LayoutDashboard, label: 'Dashboard', path: '/cook-dashboard' },
+    housekeeperDash: { icon: LayoutDashboard, label: 'Dashboard', path: '/housekeeper-dashboard' },
+    customerDash: { icon: LayoutDashboard, label: 'My Dashboard', path: '/customer-dashboard' },
   };
 
   // Select items based on role
@@ -40,53 +36,36 @@ const Sidebar: React.FC = () => {
   
   switch(role) {
     case 'Manager':
-      navItems = [
-        allNavItems.overview,
-        allNavItems.reports,
-        allNavItems.staff, 
-        allNavItems.bookings,
-        allNavItems.settings
-      ];
+      navItems = [allNavItems.managerDash];
       break;
     case 'Receptionist':
-      navItems = [
-        allNavItems.dashboard,
-        allNavItems.bookings, 
-        allNavItems.checkin, 
-        allNavItems.checkout
-      ];
+      navItems = [allNavItems.receptionistDash];
       break;
     case 'Waiter':
-      navItems = [
-        allNavItems.dashboard, 
-        allNavItems.orders
-      ];
+      navItems = [allNavItems.waiterDash];
       break;
     case 'Cook':
-      navItems = [
-        allNavItems.dashboard, 
-        allNavItems.kitchenOrders
-      ];
+      navItems = [allNavItems.cookDash];
       break;
     case 'Housekeeper':
-      navItems = [
-        allNavItems.dashboard, 
-        allNavItems.cleaningTasks
-      ];
+      navItems = [allNavItems.housekeeperDash];
       break;
     case 'Customer':
-      navItems = [
-        allNavItems.dashboard, 
-        allNavItems.myBooking, 
-        allNavItems.orders
-      ];
+      navItems = [allNavItems.customerDash];
       break;
     default:
-      navItems = [allNavItems.dashboard];
+      navItems = [];
   }
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
+
+  const handleLogout = (e: React.MouseEvent) => {
+      e.preventDefault();
+      AuthService.logout();
+      navigate('/');
+      window.location.reload();
+  };
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -95,6 +74,8 @@ const Sidebar: React.FC = () => {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
+
+  if (!user) return null; // Don't show sidebar if not logged in
 
   return (
     <>
@@ -162,16 +143,24 @@ const Sidebar: React.FC = () => {
               <span className="ml-3 font-medium text-sm">{item.label}</span>
             </NavLink>
           ))}
+          
+          <button
+              onClick={handleLogout}
+              className="w-full flex items-center p-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors duration-200 group outline-none focus:ring-2 focus:ring-red-500/50 mt-auto"
+          >
+              <LogOut className="w-6 h-6 shrink-0" strokeWidth={1.5} />
+              <span className="ml-3 font-medium text-sm">Sign Out</span>
+          </button>
         </nav>
 
         <div className="p-4 border-t border-gray-100 shrink-0">
           <div className="flex items-center p-3 bg-green-50 rounded-xl">
               <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 font-bold text-xs shrink-0">
-                  ?
+                  {user.name.charAt(0)}
               </div>
               <div className="ml-3 overflow-hidden">
-                  <p className="text-xs font-semibold text-green-900 truncate">Help Center</p>
-                  <p className="text-[10px] text-green-700 truncate">Get assistance</p>
+                  <p className="text-xs font-semibold text-green-900 truncate">{user.name}</p>
+                  <p className="text-[10px] text-green-700 truncate">{user.role}</p>
               </div>
           </div>
         </div>

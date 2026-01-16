@@ -39,6 +39,7 @@ export interface User {
   name: string;
   role: string;
   email: string;
+  password?: string; // Included for auth
 }
 
 export interface MenuItem {
@@ -145,6 +146,17 @@ export const DataService = {
   getUsers(): User[] {
     const data = localStorage.getItem(KEYS.USERS);
     return data ? JSON.parse(data) : [];
+  },
+  
+  addUser(user: Omit<User, 'id'>): User {
+    const users = this.getUsers();
+    const newUser: User = {
+        ...user,
+        id: Date.now() // Simple ID generation
+    };
+    users.push(newUser);
+    localStorage.setItem(KEYS.USERS, JSON.stringify(users));
+    return newUser;
   },
 
   getMenu(): MenuItem[] {
@@ -348,6 +360,7 @@ export const DataService = {
     // Maintenance
     const totalIssues = issues.length;
     const openIssues = issues.filter(i => i.status === 'Open').length;
+    const inProgressIssues = issues.filter(i => i.status === 'In Progress').length;
     const resolvedIssues = issues.filter(i => i.status === 'Resolved').length;
 
     return {
@@ -374,6 +387,7 @@ export const DataService = {
       maintenance: { 
         total: totalIssues, 
         open: openIssues, 
+        inProgress: inProgressIssues,
         resolved: resolvedIssues 
       }
     };
