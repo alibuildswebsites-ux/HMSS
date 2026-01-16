@@ -36,6 +36,13 @@ export interface User {
   email: string;
 }
 
+export interface MenuItem {
+  id: number;
+  item: string;
+  price: number;
+  category: string;
+}
+
 export const DataService = {
   /**
    * Initialize data from JSON files if not present in localStorage.
@@ -77,6 +84,11 @@ export const DataService = {
 
   getUsers(): User[] {
     const data = localStorage.getItem(KEYS.USERS);
+    return data ? JSON.parse(data) : [];
+  },
+
+  getMenu(): MenuItem[] {
+    const data = localStorage.getItem(KEYS.MENU);
     return data ? JSON.parse(data) : [];
   },
 
