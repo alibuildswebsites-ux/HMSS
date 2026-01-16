@@ -1,8 +1,9 @@
 
 [
-  { "id": 1, "name": "Muhammad", "role": "Manager", "email": "admin@hms.com", "password": "123" },
-  { "id": 2, "name": "Sarah Smith", "role": "Receptionist", "email": "sarah@hms.com", "password": "123" },
-  { "id": 3, "name": "John Doe", "role": "Housekeeper", "email": "john@hms.com", "password": "123" },
-  { "id": 4, "name": "Chef Gordon", "role": "Cook", "email": "chef@hms.com", "password": "123" },
-  { "id": 5, "name": "Waiter Tom", "role": "Waiter", "email": "waiter@hms.com", "password": "123" }
+  { "id": 1, "name": "Manager Default", "role": "Manager", "email": "manager@hotel.local", "password": "manager123" },
+  { "id": 2, "name": "Muhammad", "role": "Manager", "email": "admin@hms.com", "password": "123" },
+  { "id": 3, "name": "Sarah Smith", "role": "Receptionist", "email": "sarah@hms.com", "password": "123" },
+  { "id": 4, "name": "John Doe", "role": "Housekeeper", "email": "john@hms.com", "password": "123" },
+  { "id": 5, "name": "Chef Gordon", "role": "Cook", "email": "chef@hms.com", "password": "123" },
+  { "id": 6, "name": "Waiter Tom", "role": "Waiter", "email": "waiter@hms.com", "password": "123" }
 ]

@@ -4,7 +4,7 @@ import { AuthService } from '../services/authService';
 import StatsCard from '../components/StatsCard';
 import BookingChart from '../components/BookingChart';
 import AnalyticsCharts from '../components/AnalyticsCharts';
-import { ClipboardList, CheckCircle, Utensils, Clock, Flame, Ban, AlertTriangle, Wrench, LayoutDashboard, FileText, SprayCan, BedDouble, Users, UserPlus } from 'lucide-react';
+import { ClipboardList, CheckCircle, Utensils, Clock, AlertTriangle, Wrench, LayoutDashboard, FileText, SprayCan, BedDouble, Users, UserPlus, Ban } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ManagerDashboardProps {
@@ -39,6 +39,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
         setBookings(DataService.getBookings());
         setOrders(DataService.getOrders());
         setIssues(DataService.getMaintenanceIssues());
+        // Filter out Customers, only show staff (Manager included in list, though generally we don't manage other managers here, it's good for visibility)
         setStaffList(DataService.getUsers().filter(u => u.role !== 'Customer'));
         setAnalytics(DataService.getAnalytics());
     };
@@ -63,19 +64,22 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
           return;
       }
 
+      // Register creates a user with 'Customer' role by default
       const result = AuthService.register(newStaff.name, newStaff.email, newStaff.password);
       
       if (typeof result === 'string') {
           setStaffError(result);
       } else {
-          // Manually override the role since register defaults to Customer
+          // Manually override the role in localStorage since register defaults to Customer
           const users = DataService.getUsers();
           const userIndex = users.findIndex(u => u.email === newStaff.email);
           if (userIndex !== -1) {
               users[userIndex].role = newStaff.role;
               localStorage.setItem('hms_users', JSON.stringify(users));
+              
+              // Refresh local state
               setStaffList(users.filter(u => u.role !== 'Customer'));
-              setStaffSuccess(`Staff member ${newStaff.name} created successfully.`);
+              setStaffSuccess(`Staff member ${newStaff.name} created successfully as ${newStaff.role}.`);
               setNewStaff({ name: '', email: '', password: '', role: 'Receptionist' });
           }
       }
@@ -214,6 +218,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
                           value={newStaff.name}
                           onChange={e => setNewStaff({...newStaff, name: e.target.value})}
                           className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none"
+                          required
                       />
                   </div>
                   <div>
@@ -223,6 +228,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
                           value={newStaff.email}
                           onChange={e => setNewStaff({...newStaff, email: e.target.value})}
                           className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none"
+                          required
                       />
                   </div>
                   <div>
@@ -245,6 +251,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
                           value={newStaff.password}
                           onChange={e => setNewStaff({...newStaff, password: e.target.value})}
                           className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500/20 outline-none"
+                          required
                       />
                   </div>
                   
