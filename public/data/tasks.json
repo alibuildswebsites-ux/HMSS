@@ -3,7 +3,7 @@
     "id": "TSK-001",
     "roomId": "101",
     "roomNumber": "101",
-    "assignee": "John Doe",
+    "assignee": "Housekeeper",
     "status": "Pending",
     "type": "Cleaning",
     "date": "2023-10-27"
@@ -12,7 +12,7 @@
     "id": "TSK-002",
     "roomId": "201",
     "roomNumber": "201",
-    "assignee": "John Doe",
+    "assignee": "Housekeeper",
     "status": "In Progress",
     "type": "Deep Clean",
     "date": "2023-10-27"

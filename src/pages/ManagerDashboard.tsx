@@ -132,7 +132,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ initialTab = 'overv
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100 w-full">
-            <BookingChart />
+            <BookingChart bookings={bookings} />
         </div>
         <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col w-full">
             <h3 className="font-bold text-gray-800 text-lg mb-4">Maintenance Log</h3>

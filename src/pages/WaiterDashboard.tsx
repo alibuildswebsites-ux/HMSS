@@ -136,6 +136,7 @@ const WaiterDashboard: React.FC = () => {
                             <td className="p-4 text-gray-600 font-mono text-xs">{order.id}</td>
                             <td className="p-4 font-bold text-gray-800">{order.tableOrRoom}</td>
                             <td className="p-4 text-gray-600 max-w-xs truncate">
+                                {/* Correctly accessing i.item (string) */}
                                 {order.items.map(i => `${i.qty}x ${i.item}`).join(', ')}
                             </td>
                             <td className="p-4">

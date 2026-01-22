@@ -103,9 +103,9 @@ const CookDashboard: React.FC = () => {
                             <span className="text-xs text-gray-400">{new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                         <ul className="text-sm text-gray-600 mb-4 space-y-1">
-                            {order.items.map((item, idx) => (
+                            {order.items.map((orderItem, idx) => (
                                 <li key={idx} className="flex justify-between border-b border-gray-50 pb-1 last:border-0">
-                                    <span><span className="font-bold text-gray-800">{item.qty}x</span> {item.item}</span>
+                                    <span><span className="font-bold text-gray-800">{orderItem.qty}x</span> {orderItem.item}</span>
                                 </li>
                             ))}
                         </ul>
@@ -139,9 +139,9 @@ const CookDashboard: React.FC = () => {
                             <span className="text-xs text-gray-400">{new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                         <ul className="text-sm text-gray-600 mb-4 space-y-1">
-                            {order.items.map((item, idx) => (
+                            {order.items.map((orderItem, idx) => (
                                 <li key={idx} className="flex justify-between border-b border-gray-50 pb-1 last:border-0">
-                                    <span><span className="font-bold text-gray-800">{item.qty}x</span> {item.item}</span>
+                                    <span><span className="font-bold text-gray-800">{orderItem.qty}x</span> {orderItem.item}</span>
                                 </li>
                             ))}
                         </ul>
@@ -170,9 +170,9 @@ const CookDashboard: React.FC = () => {
                             <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">READY</span>
                         </div>
                         <ul className="text-sm text-gray-500 mb-2 space-y-1">
-                            {order.items.map((item, idx) => (
+                            {order.items.map((orderItem, idx) => (
                                 <li key={idx} className="flex justify-between border-b border-gray-50 pb-1 last:border-0">
-                                    <span><span className="font-bold">{item.qty}x</span> {item.item}</span>
+                                    <span><span className="font-bold">{orderItem.qty}x</span> {orderItem.item}</span>
                                 </li>
                             ))}
                         </ul>

@@ -1,28 +1,45 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Booking } from '../services/dataService';
 
-const data = [
-  { name: '01-Mar', value: 25 },
-  { name: '02-Mar', value: 38 },
-  { name: '03-Mar', value: 15 },
-  { name: '04-Mar', value: 65 },
-  { name: '05-Mar', value: 45 },
-  { name: '06-Mar', value: 25 },
-  { name: '07-Mar', value: 58 },
-];
+interface BookingChartProps {
+  bookings: Booking[];
+}
 
-const BookingChart: React.FC = () => {
+const BookingChart: React.FC<BookingChartProps> = ({ bookings }) => {
+  const data = useMemo(() => {
+    const days = 7;
+    const result = [];
+    const today = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      
+      // Construct YYYY-MM-DD in local time to match stored date format
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
+      // Format for display (e.g., 27-Oct)
+      const displayDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+      // Count bookings created/checked-in on this date
+      const count = bookings.filter(b => b.checkIn === dateStr).length;
+
+      result.push({ name: displayDate, value: count });
+    }
+    return result;
+  }, [bookings]);
+
   return (
     <div className="w-full flex flex-col h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
         <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-800 text-lg sm:text-xl">Booking</h3>
-            <span className="text-xs text-gray-400">Last update 1m ago</span>
+            <h3 className="font-bold text-gray-800 text-lg sm:text-xl">Booking Trends</h3>
+            <span className="text-xs text-gray-400">Last 7 days (Check-ins)</span>
         </div>
-        <select className="text-xs bg-transparent text-green-700 font-medium outline-none cursor-pointer py-2 px-1 h-10" aria-label="Select date range">
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-        </select>
       </div>
 
       {/* Aspect Ratio Container for Chart */}

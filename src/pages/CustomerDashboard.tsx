@@ -79,7 +79,7 @@ const CustomerDashboard: React.FC = () => {
   const handleCreateOrder = (cartItems: { item: MenuItem; qty: number }[], location: string) => {
     const items = cartItems.map(c => ({
       id: c.item.id,
-      item: c.item.item,
+      item: c.item.item, // This extracts the string name from MenuItem
       price: c.item.price,
       qty: c.qty
     }));
@@ -239,6 +239,7 @@ const CustomerDashboard: React.FC = () => {
                     myOrders.map(order => (
                         <tr key={order.id} className="hover:bg-gray-50/50">
                         <td className="p-3 text-gray-600 text-xs">
+                             {/* Correctly accessing i.item (string) */}
                              {order.items.map(i => `${i.qty}x ${i.item}`).join(', ')}
                         </td>
                         <td className="p-3 font-bold text-gray-800">${order.total}</td>
